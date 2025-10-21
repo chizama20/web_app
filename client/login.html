@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>Sign In</h1>
+        <a class="link" href="index.html">← Back to Home</a>
+      </header>
+
+      <form id="loginForm" class="card form gap">
+        <input name="username" placeholder="Username" required />
+        <input name="password" type="password" placeholder="Password" required />
+        <button class="btn">Login</button>
+      </form>
+
+      <div id="out" class="muted" aria-live="polite"></div>
+    </main>
+
+    <script>
+      const f = document.getElementById('loginForm');
+      const out = document.getElementById('out');
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        out.textContent = 'Signing in…';
+        const data = Object.fromEntries(new FormData(f).entries());
+        try {
+          const res = await fetch('http://localhost:5000/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
+          out.textContent = json.message || (json.success ? 'Login successful' : 'Login failed');
+        } catch (e) {
+          out.textContent = 'Login failed';
+        }
+      };
+    </script>
+  </body>
+  </html>

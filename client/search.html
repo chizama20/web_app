@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Search Users</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>Search Users</h1>
+        <a class="link" href="index.html">← Back to Home</a>
+      </header>
+
+      <div class="card gap">
+        <div class="button-row">
+          <button class="btn" id="btn-never">Never signed in</button>
+          <button class="btn" id="btn-today">Registered today</button>
+        </div>
+
+        <form class="row" id="form-name">
+          <input id="fname" placeholder="First name" />
+          <input id="lname" placeholder="Last name" />
+          <button class="btn">Search by name</button>
+        </form>
+
+        <form class="row" id="form-salary">
+          <input id="smin" type="number" placeholder="Min salary" />
+          <input id="smax" type="number" placeholder="Max salary" />
+          <button class="btn">Search salary range</button>
+        </form>
+
+        <form class="row" id="form-age">
+          <input id="amin" type="number" placeholder="Min age" />
+          <input id="amax" type="number" placeholder="Max age" />
+          <button class="btn">Search age range</button>
+        </form>
+
+        <form class="row" id="form-after">
+          <input id="afterUser" placeholder="Username" />
+          <button class="btn">After this user</button>
+        </form>
+
+        <form class="row" id="form-sameday">
+          <input id="sameUser" placeholder="Username" />
+          <button class="btn">Same day as user</button>
+        </form>
+      </div>
+
+      <div id="status" class="muted" aria-live="polite"></div>
+
+      <div class="card">
+        <table id="results">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      const statusEl = document.getElementById('status');
+      const table = document.getElementById('results');
+      const thead = table.querySelector('thead');
+      const tbody = table.querySelector('tbody');
+
+      function setLoading(isLoading) {
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach((b) => (b.disabled = isLoading));
+        statusEl.textContent = isLoading ? 'Loading…' : '';
+      }
+
+      function toArray(data) {
+        if (Array.isArray(data)) return data;
+        if (data && Array.isArray(data.data)) return data.data;
+        return [];
+      }
+
+      function renderResults(items) {
+        const rows = toArray(items);
+        tbody.innerHTML = '';
+        thead.innerHTML = '';
+
+        if (!rows.length) {
+          statusEl.textContent = 'No users found';
+          return;
+        }
+
+        const preferred = [
+          'username',
+          'firstname',
+          'lastname',
+          'salary',
+          'age',
+          'registerday',
+          'signintime',
+          'id'
+        ];
+        const keys = Array.from(
+          new Set(rows.flatMap((r) => Object.keys(r)))
+        ).sort((a, b) => preferred.indexOf(a) - preferred.indexOf(b));
+
+        thead.innerHTML = '<tr>' + keys.map((k) => `<th>${k}</th>`).join('') + '</tr>';
+        rows.forEach((row) => {
+          const tr = document.createElement('tr');
+          keys.forEach((k) => {
+            const td = document.createElement('td');
+            let v = row[k];
+            if (v === null || v === undefined) v = '';
+            td.textContent = String(v);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        statusEl.textContent = `${rows.length} user(s)`;
+      }
+
+      async function doSearch(url) {
+        try {
+          setLoading(true);
+          const res = await fetch(url);
+          const json = await res.json();
+          renderResults(json);
+        } catch (e) {
+          statusEl.textContent = 'Error loading users';
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      document.getElementById('btn-never').addEventListener('click', () =>
+        doSearch('http://localhost:5000/search/never-signed')
+      );
+      document.getElementById('btn-today').addEventListener('click', () =>
+        doSearch('http://localhost:5000/search/today')
+      );
+
+      document.getElementById('form-name').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const f = document.getElementById('fname').value;
+        const l = document.getElementById('lname').value;
+        doSearch(`http://localhost:5000/search/name?firstname=${encodeURIComponent(f)}&lastname=${encodeURIComponent(l)}`);
+      });
+
+      document.getElementById('form-salary').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const min = document.getElementById('smin').value || 0;
+        const max = document.getElementById('smax').value || 999999;
+        doSearch(`http://localhost:5000/search/salary?min=${encodeURIComponent(min)}&max=${encodeURIComponent(max)}`);
+      });
+
+      document.getElementById('form-age').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const min = document.getElementById('amin').value || 0;
+        const max = document.getElementById('amax').value || 120;
+        doSearch(`http://localhost:5000/search/age?min=${encodeURIComponent(min)}&max=${encodeURIComponent(max)}`);
+      });
+
+      document.getElementById('form-after').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const u = document.getElementById('afterUser').value;
+        doSearch(`http://localhost:5000/search/after/${encodeURIComponent(u)}`);
+      });
+
+      document.getElementById('form-sameday').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const u = document.getElementById('sameUser').value;
+        doSearch(`http://localhost:5000/search/same-day/${encodeURIComponent(u)}`);
+      });
+    </script>
+  </body>
+  </html>

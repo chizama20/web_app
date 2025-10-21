@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Register</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1>User Registration</h1>
+        <a class="link" href="index.html">← Back to Home</a>
+      </header>
+
+      <form id="registerForm" class="card form gap">
+        <input name="username" placeholder="Username" required />
+        <input name="password" type="password" placeholder="Password" required />
+        <div class="row">
+          <input name="firstname" placeholder="First name" />
+          <input name="lastname" placeholder="Last name" />
+        </div>
+        <div class="row">
+          <input name="salary" type="number" placeholder="Salary" />
+          <input name="age" type="number" placeholder="Age" />
+        </div>
+        <button class="btn">Register</button>
+      </form>
+
+      <div id="out" class="muted" aria-live="polite"></div>
+    </main>
+
+    <script>
+      const f = document.getElementById('registerForm');
+      const out = document.getElementById('out');
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        out.textContent = 'Submitting…';
+        const data = Object.fromEntries(new FormData(f).entries());
+        try {
+          const res = await fetch('http://localhost:5000/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          const json = await res.json();
+          out.textContent = json.message || (json.success ? 'Registered' : 'Failed');
+          if (json.success) f.reset();
+        } catch (e) {
+          out.textContent = 'Registration failed';
+        }
+      };
+    </script>
+  </body>
+  </html>
